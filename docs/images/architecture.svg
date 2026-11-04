@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" role="img" aria-labelledby="archTitle archDesc">
+  <title id="archTitle">Secure IoT Edge  system architecture</title>
+  <desc id="archDesc">Layered view from hardware through Zephyr RTOS, application modules, connectivity, and cloud.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="108%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+  <rect width="960" height="520" fill="url(#bg)"/>
+  <text x="480" y="36" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI, system-ui, sans-serif" font-size="22" font-weight="600">Secure IoT Edge  System Architecture</text>
+  <text x="480" y="58" text-anchor="middle" fill="#94a3b8" font-family="Segoe UI, system-ui, sans-serif" font-size="13">Zephyr RTOS · nRF5340 + Wi-Fi · MCUboot · MQTT</text>
+
+  <!-- Cloud -->
+  <g filter="url(#shadow)">
+    <rect x="340" y="72" width="280" height="56" rx="10" fill="#334155" stroke="#64748b" stroke-width="1.5"/>
+    <text x="480" y="96" text-anchor="middle" fill="#e2e8f0" font-family="Segoe UI, system-ui, sans-serif" font-size="14" font-weight="600">Cloud</text>
+    <text x="480" y="114" text-anchor="middle" fill="#94a3b8" font-family="Segoe UI, system-ui, sans-serif" font-size="11">MQTT broker · OTA artifact store · fleet commands</text>
+  </g>
+
+  <!-- Connectivity -->
+  <g filter="url(#shadow)">
+    <rect x="80" y="160" width="800" height="88" rx="10" fill="#1e3a5f" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="100" y="184" fill="#7dd3fc" font-family="Segoe UI, system-ui, sans-serif" font-size="12" font-weight="600">CONNECTIVITY</text>
+    <rect x="100" y="196" width="220" height="40" rx="6" fill="#0c4a6e" stroke="#38bdf8"/>
+    <text x="210" y="220" text-anchor="middle" fill="#e0f2fe" font-family="Segoe UI, system-ui, sans-serif" font-size="12">BLE GATT provisioning</text>
+    <rect x="370" y="196" width="220" height="40" rx="6" fill="#0c4a6e" stroke="#38bdf8"/>
+    <text x="480" y="220" text-anchor="middle" fill="#e0f2fe" font-family="Segoe UI, system-ui, sans-serif" font-size="12">Wi-Fi station + DHCP</text>
+    <rect x="640" y="196" width="220" height="40" rx="6" fill="#0c4a6e" stroke="#38bdf8"/>
+    <text x="750" y="220" text-anchor="middle" fill="#e0f2fe" font-family="Segoe UI, system-ui, sans-serif" font-size="12">MQTT (TLS optional)</text>
+  </g>
+
+  <!-- Application -->
+  <g filter="url(#shadow)">
+    <rect x="80" y="272" width="800" height="100" rx="10" fill="#14532d" stroke="#4ade80" stroke-width="1.5"/>
+    <text x="100" y="296" fill="#86efac" font-family="Segoe UI, system-ui, sans-serif" font-size="12" font-weight="600">APPLICATION (apps/secure_iot_edge)</text>
+    <rect x="100" y="308" width="115" height="48" rx="6" fill="#166534" stroke="#4ade80"/>
+    <text x="157" y="328" text-anchor="middle" fill="#dcfce7" font-family="Segoe UI, system-ui, sans-serif" font-size="10">main /</text>
+    <text x="157" y="342" text-anchor="middle" fill="#dcfce7" font-family="Segoe UI, system-ui, sans-serif" font-size="10">connectivity</text>
+    <rect x="225" y="308" width="115" height="48" rx="6" fill="#166534" stroke="#4ade80"/>
+    <text x="282" y="336" text-anchor="middle" fill="#dcfce7" font-family="Segoe UI, system-ui, sans-serif" font-size="10">sensor_hub</text>
+    <rect x="350" y="308" width="115" height="48" rx="6" fill="#166534" stroke="#4ade80"/>
+    <text x="407" y="336" text-anchor="middle" fill="#dcfce7" font-family="Segoe UI, system-ui, sans-serif" font-size="10">fota_mgr</text>
+    <rect x="475" y="308" width="115" height="48" rx="6" fill="#166534" stroke="#4ade80"/>
+    <text x="532" y="336" text-anchor="middle" fill="#dcfce7" font-family="Segoe UI, system-ui, sans-serif" font-size="10">wifi_cred</text>
+    <rect x="600" y="308" width="115" height="48" rx="6" fill="#166534" stroke="#4ade80"/>
+    <text x="657" y="336" text-anchor="middle" fill="#dcfce7" font-family="Segoe UI, system-ui, sans-serif" font-size="10">diagnostics</text>
+    <rect x="725" y="308" width="115" height="48" rx="6" fill="#166534" stroke="#4ade80"/>
+    <text x="782" y="336" text-anchor="middle" fill="#dcfce7" font-family="Segoe UI, system-ui, sans-serif" font-size="10">power_mgr</text>
+  </g>
+
+  <!-- Security -->
+  <g filter="url(#shadow)">
+    <rect x="80" y="396" width="380" height="88" rx="10" fill="#422006" stroke="#fbbf24" stroke-width="1.5"/>
+    <text x="100" y="420" fill="#fde68a" font-family="Segoe UI, system-ui, sans-serif" font-size="12" font-weight="600">SECURE BOOT &amp; FOTA</text>
+    <text x="270" y="448" text-anchor="middle" fill="#fef3c7" font-family="Segoe UI, system-ui, sans-serif" font-size="11">MCUboot verifies signed image</text>
+    <text x="270" y="466" text-anchor="middle" fill="#fcd34d" font-family="Segoe UI, system-ui, sans-serif" font-size="10">slot0 / slot1 · confirm-after-boot</text>
+  </g>
+
+  <!-- Zephyr + HW -->
+  <g filter="url(#shadow)">
+    <rect x="500" y="396" width="380" height="88" rx="10" fill="#312e81" stroke="#a78bfa" stroke-width="1.5"/>
+    <text x="520" y="420" fill="#c4b5fd" font-family="Segoe UI, system-ui, sans-serif" font-size="12" font-weight="600">ZEPHYR RTOS + HARDWARE</text>
+    <text x="690" y="448" text-anchor="middle" fill="#ede9fe" font-family="Segoe UI, system-ui, sans-serif" font-size="11">Threads · NVS/settings · net stack · drivers</text>
+    <text x="690" y="466" text-anchor="middle" fill="#a78bfa" font-family="Segoe UI, system-ui, sans-serif" font-size="10">nRF5340 · nRF7002 Wi-Fi · sensors (I2C)</text>
+  </g>
+
+  <!-- Arrows -->
+  <line x1="480" y1="128" x2="480" y2="160" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="750" y1="248" x2="750" y2="272" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="270" y1="372" x2="270" y2="396" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="690" y1="372" x2="690" y2="396" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+</svg>

@@ -1,0 +1,96 @@
+mainmenu "Secure IoT Edge Application"
+
+source "Kconfig.zephyr"
+
+menu "Secure IoT Edge"
+
+config SECURE_IOT_EDGE_APP_VERSION
+	string "Application version string (telemetry + OTA demo)"
+	default "1.0.0"
+
+config SECURE_IOT_EDGE_BLE_PROVISION
+	bool "Enable BLE Wi-Fi provisioning"
+	default y
+	depends on BT
+
+config SECURE_IOT_EDGE_WIFI
+	bool "Enable Wi-Fi station manager"
+	default y
+	depends on WIFI
+
+config SECURE_IOT_EDGE_WIFI_SSID
+	string "Lab Wi-Fi SSID (optional if using BLE/NVS)"
+	default ""
+	depends on SECURE_IOT_EDGE_WIFI
+
+config SECURE_IOT_EDGE_WIFI_PSK
+	string "Lab Wi-Fi PSK (optional)"
+	default ""
+	depends on SECURE_IOT_EDGE_WIFI
+
+config SECURE_IOT_EDGE_MQTT
+	bool "Enable MQTT cloud client"
+	default y
+	depends on MQTT_LIB
+
+config SECURE_IOT_EDGE_MQTT_TLS
+	bool "Use TLS for MQTT"
+	default y
+	depends on SECURE_IOT_EDGE_MQTT && MQTT_LIB_TLS
+
+config SECURE_IOT_EDGE_MQTT_HOST
+	string "MQTT broker hostname or IP"
+	default "mqtt.example.com"
+	depends on SECURE_IOT_EDGE_MQTT
+
+config SECURE_IOT_EDGE_MQTT_PORT
+	int "MQTT broker port"
+	default 8883 if SECURE_IOT_EDGE_MQTT_TLS
+	default 1883
+	depends on SECURE_IOT_EDGE_MQTT
+
+config SECURE_IOT_EDGE_MQTT_CLIENT_ID
+	string "MQTT client ID prefix"
+	default "secure-iot-edge"
+	depends on SECURE_IOT_EDGE_MQTT
+
+config SECURE_IOT_EDGE_MQTT_TOPIC_TELEMETRY
+	string "Telemetry publish topic"
+	default "iot/edge/telemetry"
+	depends on SECURE_IOT_EDGE_MQTT
+
+config SECURE_IOT_EDGE_MQTT_TOPIC_CMD
+	string "Command subscribe topic"
+	default "iot/edge/cmd"
+	depends on SECURE_IOT_EDGE_MQTT
+
+config SECURE_IOT_EDGE_MQTT_KEEPALIVE
+	int "MQTT keepalive seconds"
+	default 60
+	depends on SECURE_IOT_EDGE_MQTT
+
+config SECURE_IOT_EDGE_MQTT_PUBLISH_INTERVAL
+	int "Telemetry publish interval seconds"
+	default 30
+	depends on SECURE_IOT_EDGE_MQTT
+
+config SECURE_IOT_EDGE_FOTA
+	bool "Enable FOTA (MCUboot image confirm)"
+	default y
+	depends on IMG_MANAGER
+
+config SECURE_IOT_EDGE_SENSORS
+	bool "Enable sensor hub"
+	default y
+
+config SECURE_IOT_EDGE_POWER_MGMT
+	bool "Enable application power policy"
+	default y
+	depends on PM
+
+config SECURE_IOT_EDGE_DIAG_SHELL
+	bool "Enable diagnostic shell commands"
+	default n
+	depends on SHELL
+
+endmenu

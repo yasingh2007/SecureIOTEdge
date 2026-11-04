@@ -1,0 +1,19 @@
+# Zephyr / West
+.west/
+build/
+build-*/
+**/zephyr/.config
+**/zephyr/zephyr.dts
+**/zephyr/zephyr.dts.pre
+
+# Local config (secrets)
+apps/secure_iot_edge/prj.conf
+*.pem
+*.key
+keys/
+
+# Tooling
+__pycache__/
+*.pyc
+.vscode/
+.idea/
