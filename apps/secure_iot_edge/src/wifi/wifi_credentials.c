@@ -150,3 +150,26 @@ int wifi_credentials_save(const struct sie_wifi_credentials *in)
 	return -ENOTSUP;
 #endif
 }
+
+int wifi_credentials_clear(void)
+{
+#if IS_ENABLED(CONFIG_SETTINGS)
+	int err;
+
+	err = settings_delete(SETTINGS_SSID);
+	if (err != 0 && err != -ENOENT) {
+		return err;
+	}
+
+	err = settings_delete(SETTINGS_PSK);
+	if (err != 0 && err != -ENOENT) {
+		return err;
+	}
+
+	stored_valid = false;
+	LOG_INF("Wi-Fi credentials erased from NVS");
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}

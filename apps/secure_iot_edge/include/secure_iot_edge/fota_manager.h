@@ -9,5 +9,6 @@ struct app_context;
 
 int fota_manager_init(struct app_context *ctx);
 void fota_manager_periodic(struct app_context *ctx);
+int fota_manager_confirm_now(struct app_context *ctx);
 
 #endif /* SECURE_IOT_EDGE_FOTA_MANAGER_H_ */

@@ -38,6 +38,18 @@ config SECURE_IOT_EDGE_MQTT_TLS
 	default y
 	depends on SECURE_IOT_EDGE_MQTT && MQTT_LIB_TLS
 
+config SECURE_IOT_EDGE_MQTT_TLS_SEC_TAG
+	int "TLS credential security tag"
+	default 1
+	depends on SECURE_IOT_EDGE_MQTT_TLS
+
+config SECURE_IOT_EDGE_MQTT_TLS_INSECURE
+	bool "Disable TLS certificate verification (lab only)"
+	default n
+	depends on SECURE_IOT_EDGE_MQTT_TLS
+	help
+	  Sets TLS peer verify to NONE. Never enable in production firmware.
+
 config SECURE_IOT_EDGE_MQTT_HOST
 	string "MQTT broker hostname or IP"
 	default "mqtt.example.com"

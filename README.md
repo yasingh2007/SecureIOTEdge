@@ -156,7 +156,7 @@ sequenceDiagram
 | RTOS | Zephyr threads, work queues, `k_timer` |
 | BLE | Peripheral GAP/GATT for Wi-Fi credential delivery (see `src/ble/`) |
 | Wi-Fi | Station mode, reconnect policy (`src/wifi/`) |
-| MQTT | TLS-capable client, telemetry + command topics (`src/mqtt/`) |
+| MQTT | DNS broker resolve, TLS CA credentials, JSON command handler (`docs/mqtt.md`) |
 | Secure boot | MCUboot in secondary slot layout (`bootloader/` + `sysbuild.conf`) |
 | FOTA | MCUboot image confirm after MQTT check-in (`src/fota/`) |
 | Sensors | BME680 via devicetree or synthetic JSON fallback (`src/sensors/`) |
@@ -204,7 +204,7 @@ Copy `apps/secure_iot_edge/prj.conf.sample` to `prj.conf` and set Wi-Fi/MQTT cre
 - **`boards/*.overlay`**: pins, partitions, sensor nodes.
 - **`sysbuild.conf`**: MCUboot as bootloader child image.
 
-See [docs/bring-up.md](docs/bring-up.md) and [docs/fota.md](docs/fota.md).
+See [docs/bring-up.md](docs/bring-up.md), [docs/mqtt.md](docs/mqtt.md), and [docs/fota.md](docs/fota.md).
 
 ## Security notes (portfolio talking points)
 

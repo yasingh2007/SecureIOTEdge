@@ -23,5 +23,6 @@ int wifi_credentials_init(void);
 int wifi_credentials_load(struct sie_wifi_credentials *out);
 int wifi_credentials_save(const struct sie_wifi_credentials *in);
 bool wifi_credentials_has_stored(void);
+int wifi_credentials_clear(void);
 
 #endif /* SECURE_IOT_EDGE_WIFI_CREDENTIALS_H_ */

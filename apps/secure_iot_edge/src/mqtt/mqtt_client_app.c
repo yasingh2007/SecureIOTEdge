@@ -11,6 +11,10 @@
 #include <zephyr/logging/log.h>
 
 #include "app_context.h"
+#include "mqtt_broker.h"
+#include "mqtt_tls.h"
+#include "secure_iot_edge/mqtt_client_app.h"
+#include "secure_iot_edge/mqtt_command.h"
 #include "secure_iot_edge/sensor_hub.h"
 
 LOG_MODULE_REGISTER(mqtt_app, CONFIG_LOG_DEFAULT_LEVEL);
@@ -31,21 +35,36 @@ static uint8_t tx_buffer[512];
 static uint8_t payload_buf[256];
 static char client_id[32];
 static bool mqtt_connected;
+static bool broker_resolved;
 static struct k_work_delayable publish_work;
-
-static int broker_init(void)
-{
-	struct sockaddr_in *sin = (struct sockaddr_in *)&broker;
-
-	sin->sin_family = AF_INET;
-	sin->sin_port = htons(CONFIG_SECURE_IOT_EDGE_MQTT_PORT);
-	return zsock_inet_pton(AF_INET, CONFIG_SECURE_IOT_EDGE_MQTT_HOST, &sin->sin_addr);
-}
 
 static void schedule_publish(void)
 {
 	k_work_schedule(&publish_work,
 			K_SECONDS(CONFIG_SECURE_IOT_EDGE_MQTT_PUBLISH_INTERVAL));
+}
+
+void mqtt_client_publish_now(void)
+{
+	k_work_schedule(&publish_work, K_NO_WAIT);
+}
+
+static int ensure_broker_addr(void)
+{
+	int err;
+
+	if (broker_resolved) {
+		return 0;
+	}
+
+	err = mqtt_broker_resolve(CONFIG_SECURE_IOT_EDGE_MQTT_HOST,
+				  CONFIG_SECURE_IOT_EDGE_MQTT_PORT, &broker);
+	if (err != 0) {
+		return err;
+	}
+
+	broker_resolved = true;
+	return 0;
 }
 
 static void mqtt_evt_handler(struct mqtt_client *const c, const struct mqtt_evt *evt)
@@ -80,7 +99,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c, const struct mqtt_evt 
 
 	case MQTT_EVT_PUBLISH: {
 		const struct mqtt_publish_param *pub = &evt->param.publish;
-		uint8_t cmd[64];
+		uint8_t cmd[192];
 		size_t len = pub->message.payload.len;
 
 		if (len >= sizeof(cmd)) {
@@ -89,8 +108,7 @@ static void mqtt_evt_handler(struct mqtt_client *const c, const struct mqtt_evt 
 		if (mqtt_read_publish_payload(c, cmd, len) < 0) {
 			break;
 		}
-		cmd[len] = '\0';
-		LOG_INF("MQTT command: %s", cmd);
+		mqtt_command_dispatch(app_ctx, (const char *)cmd, len);
 		break;
 	}
 
@@ -149,6 +167,10 @@ static int mqtt_connect_client(void)
 	struct mqtt_conn_param param;
 	int err;
 
+	if (ensure_broker_addr() != 0) {
+		return -EHOSTUNREACH;
+	}
+
 	mqtt_client_init(&client);
 	client.broker = &broker;
 	client.evt_cb = mqtt_evt_handler;
@@ -158,7 +180,15 @@ static int mqtt_connect_client(void)
 	client.tx_buf_size = sizeof(tx_buffer);
 
 #if IS_ENABLED(CONFIG_SECURE_IOT_EDGE_MQTT_TLS)
+	struct mqtt_sec_config *tls = mqtt_tls_config();
+
+	if (tls == NULL) {
+		LOG_ERR("MQTT TLS not initialized");
+		return -EACCES;
+	}
+
 	client.transport.type = MQTT_TRANSPORT_SECURE;
+	client.transport.tls.config = tls;
 #else
 	client.transport.type = MQTT_TRANSPORT_NON_SECURE;
 #endif
@@ -184,10 +214,12 @@ static void mqtt_thread_fn(void *p1, void *p2, void *p3)
 
 	app_ctx = ctx;
 
-	if (broker_init() != 1) {
-		LOG_ERR("Invalid broker address");
+#if IS_ENABLED(CONFIG_SECURE_IOT_EDGE_MQTT_TLS)
+	if (mqtt_tls_init() != 0) {
+		LOG_ERR("MQTT TLS setup failed");
 		return;
 	}
+#endif
 
 	topic_pub.utf8 = (uint8_t *)CONFIG_SECURE_IOT_EDGE_MQTT_TOPIC_TELEMETRY;
 	topic_pub.size = strlen(CONFIG_SECURE_IOT_EDGE_MQTT_TOPIC_TELEMETRY);
@@ -203,6 +235,7 @@ static void mqtt_thread_fn(void *p1, void *p2, void *p3)
 	while (true) {
 		if (!mqtt_connected) {
 			if (mqtt_connect_client() != 0) {
+				broker_resolved = false;
 				k_sleep(K_SECONDS(5));
 				continue;
 			}
@@ -228,7 +261,7 @@ static void mqtt_thread_fn(void *p1, void *p2, void *p3)
 	}
 }
 
-K_THREAD_STACK_DEFINE(mqtt_stack, 6144);
+K_THREAD_STACK_DEFINE(mqtt_stack, 7168);
 static struct k_thread mqtt_thread_data;
 
 #endif /* CONFIG_SECURE_IOT_EDGE_MQTT */
@@ -244,11 +277,18 @@ int mqtt_client_app_start(struct app_context *ctx)
 			mqtt_thread_fn, ctx, NULL, NULL, K_PRIO_COOP(6), 0, K_NO_WAIT);
 	k_thread_name_set(&mqtt_thread_data, "mqtt");
 
-	LOG_INF("MQTT target %s:%d", CONFIG_SECURE_IOT_EDGE_MQTT_HOST,
-		CONFIG_SECURE_IOT_EDGE_MQTT_PORT);
+	LOG_INF("MQTT target %s:%d (DNS + %s)", CONFIG_SECURE_IOT_EDGE_MQTT_HOST,
+		CONFIG_SECURE_IOT_EDGE_MQTT_PORT,
+		IS_ENABLED(CONFIG_SECURE_IOT_EDGE_MQTT_TLS) ? "TLS" : "plain");
 	return 0;
 #else
 	ARG_UNUSED(ctx);
 	return -ENOTSUP;
 #endif
 }
+
+#if !IS_ENABLED(CONFIG_SECURE_IOT_EDGE_MQTT)
+void mqtt_client_publish_now(void)
+{
+}
+#endif

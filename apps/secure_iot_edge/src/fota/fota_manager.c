@@ -65,3 +65,27 @@ void fota_manager_periodic(struct app_context *ctx)
 	LOG_INF("OTA image confirmed");
 #endif
 }
+
+int fota_manager_confirm_now(struct app_context *ctx)
+{
+#if IS_ENABLED(CONFIG_SECURE_IOT_EDGE_FOTA)
+	int err;
+
+	err = boot_write_img_confirmed();
+	if (err != 0) {
+		LOG_ERR("Image confirm failed (%d)", err);
+		return err;
+	}
+
+	needs_confirm = false;
+	confirm_done = true;
+	if (ctx != NULL) {
+		ctx->fota_pending_confirm = false;
+	}
+	LOG_INF("OTA image confirmed (command)");
+	return 0;
+#else
+	ARG_UNUSED(ctx);
+	return -ENOTSUP;
+#endif
+}

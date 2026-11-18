@@ -8,6 +8,7 @@ build-*/
 
 # Local config (secrets)
 apps/secure_iot_edge/prj.conf
+apps/secure_iot_edge/certs/ca.pem
 *.pem
 *.key
 keys/
