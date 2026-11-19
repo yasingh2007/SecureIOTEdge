@@ -11,6 +11,7 @@
 #include <zephyr/sys/reboot.h>
 
 #include "app_context.h"
+#include "secure_iot_edge/ble_provision.h"
 #include "secure_iot_edge/fota_manager.h"
 #include "secure_iot_edge/mqtt_client_app.h"
 #include "secure_iot_edge/mqtt_command.h"
@@ -56,8 +57,21 @@ static void handle_cmd(struct app_context *ctx, const char *cmd)
 	if (strcmp(cmd, "factory_reset") == 0) {
 		LOG_INF("Command: factory_reset (Wi-Fi credentials)");
 		if (wifi_credentials_clear() == 0) {
-			LOG_INF("Credentials cleared — reboot to re-provision");
+#if IS_ENABLED(CONFIG_SECURE_IOT_EDGE_BLE_PROVISION)
+			ble_provision_reopen_window();
+#endif
+			LOG_INF("Credentials cleared — reprovision via BLE or MQTT");
 		}
+		return;
+	}
+
+	if (strcmp(cmd, "provision") == 0) {
+#if IS_ENABLED(CONFIG_SECURE_IOT_EDGE_BLE_PROVISION)
+		LOG_INF("Command: provision (reopen BLE window)");
+		ble_provision_reopen_window();
+#else
+		LOG_WRN("BLE provisioning disabled");
+#endif
 		return;
 	}
 

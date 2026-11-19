@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(ble_provision, CONFIG_LOG_DEFAULT_LEVEL);
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/sys/util.h>
 
+#include "secure_iot_edge/ble_provision.h"
 #include "secure_iot_edge/wifi_credentials.h"
 #include "secure_iot_edge/wifi_manager.h"
 
@@ -40,6 +41,80 @@ static struct bt_uuid_128 prov_ctrl_uuid = BT_UUID_INIT_128(SIE_PROV_CHAR_CTRL_U
 
 static struct sie_wifi_credentials pending;
 static bool pending_dirty;
+static bool advertising;
+static bool window_open;
+static struct k_work_delayable window_timeout_work;
+
+static const struct bt_data ad[] = {
+	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME,
+		sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
+static void window_timeout_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	if (!window_open) {
+		return;
+	}
+
+	LOG_INF("BLE provision window expired (%d s)",
+		CONFIG_SECURE_IOT_EDGE_BLE_PROVISION_WINDOW_SEC);
+	ble_provision_stop();
+}
+
+static int start_advertising(void)
+{
+	int err;
+
+	if (advertising) {
+		return 0;
+	}
+
+	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err != 0) {
+		LOG_ERR("Advertising failed %d", err);
+		return err;
+	}
+
+	advertising = true;
+	LOG_INF("BLE provisioning advertising (%s)", CONFIG_BT_DEVICE_NAME);
+	return 0;
+}
+
+void ble_provision_stop(void)
+{
+	if (!window_open && !advertising) {
+		return;
+	}
+
+	k_work_cancel_delayable(&window_timeout_work);
+	window_open = false;
+
+	if (advertising) {
+		(void)bt_le_adv_stop();
+		advertising = false;
+		LOG_INF("BLE provisioning stopped");
+	}
+}
+
+bool ble_provision_window_active(void)
+{
+	return window_open;
+}
+
+void ble_provision_reopen_window(void)
+{
+	memset(&pending, 0, sizeof(pending));
+	pending_dirty = false;
+	window_open = true;
+
+	(void)start_advertising();
+	k_work_reschedule(&window_timeout_work,
+			  K_SECONDS(CONFIG_SECURE_IOT_EDGE_BLE_PROVISION_WINDOW_SEC));
+	LOG_INF("BLE provision window reopened");
+}
 
 static ssize_t ssid_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			    const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
@@ -47,6 +122,10 @@ static ssize_t ssid_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	ARG_UNUSED(conn);
 	ARG_UNUSED(attr);
 	ARG_UNUSED(flags);
+
+	if (!window_open) {
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
+	}
 
 	if (offset + len > SIE_WIFI_SSID_MAX) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -67,6 +146,10 @@ static ssize_t psk_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	ARG_UNUSED(conn);
 	ARG_UNUSED(attr);
 	ARG_UNUSED(flags);
+
+	if (!window_open) {
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
+	}
 
 	if (offset + len > SIE_WIFI_PSK_MAX) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -91,6 +174,10 @@ static ssize_t ctrl_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	ARG_UNUSED(offset);
 	ARG_UNUSED(flags);
 
+	if (!window_open) {
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
+	}
+
 	if (len < 1 || byte[0] != 0x01) {
 		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
@@ -107,7 +194,8 @@ static ssize_t ctrl_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
-	LOG_INF("BLE provisioning applied");
+	LOG_INF("BLE provisioning applied — closing window");
+	ble_provision_stop();
 	return len;
 }
 
@@ -129,11 +217,13 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		LOG_ERR("BLE connect failed %u", err);
 		return;
 	}
-	LOG_INF("Provisioner connected — write SSID, PSK, control 0x01");
+	LOG_INF("Provisioner connected (window open %d s remaining)",
+		CONFIG_SECURE_IOT_EDGE_BLE_PROVISION_WINDOW_SEC);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
+	ARG_UNUSED(conn);
 	LOG_INF("BLE disconnected (reason %u)", reason);
 }
 
@@ -142,35 +232,58 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
-static const struct bt_data ad[] = {
-	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME,
-		sizeof(CONFIG_BT_DEVICE_NAME) - 1),
-};
+static bool should_open_window_at_boot(void)
+{
+	if (IS_ENABLED(CONFIG_SECURE_IOT_EDGE_BLE_PROVISION_ALWAYS)) {
+		return true;
+	}
+
+	return !wifi_credentials_has_stored();
+}
 
 #endif /* CONFIG_SECURE_IOT_EDGE_BLE_PROVISION */
 
 int ble_provision_start(void)
 {
 #if IS_ENABLED(CONFIG_SECURE_IOT_EDGE_BLE_PROVISION)
-	int err = bt_enable(NULL);
+	int err;
 
-	if (err) {
+	err = bt_enable(NULL);
+	if (err != 0) {
 		return err;
 	}
 
-	memset(&pending, 0, sizeof(pending));
-	pending_dirty = false;
+	k_work_init_delayable(&window_timeout_work, window_timeout_handler);
+	advertising = false;
+	window_open = false;
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err) {
-		LOG_ERR("Advertising failed %d", err);
-		return err;
+	(void)wifi_credentials_init();
+
+	if (!should_open_window_at_boot()) {
+		LOG_INF("Stored Wi-Fi credentials — BLE provision window skipped");
+		return 0;
 	}
 
-	LOG_INF("BLE provisioning active (%s)", CONFIG_BT_DEVICE_NAME);
+	ble_provision_reopen_window();
 	return 0;
 #else
 	return -ENOTSUP;
 #endif
 }
+
+#if !IS_ENABLED(CONFIG_SECURE_IOT_EDGE_BLE_PROVISION)
+
+void ble_provision_stop(void)
+{
+}
+
+bool ble_provision_window_active(void)
+{
+	return false;
+}
+
+void ble_provision_reopen_window(void)
+{
+}
+
+#endif

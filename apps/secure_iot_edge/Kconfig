@@ -13,6 +13,23 @@ config SECURE_IOT_EDGE_BLE_PROVISION
 	default y
 	depends on BT
 
+config SECURE_IOT_EDGE_BLE_PROVISION_WINDOW_SEC
+	int "BLE provisioning window duration (seconds)"
+	default 300
+	depends on SECURE_IOT_EDGE_BLE_PROVISION
+	help
+	  Stops BLE advertising when this timer expires. Writes are rejected after close.
+
+config SECURE_IOT_EDGE_BLE_PROVISION_ALWAYS
+	bool "Advertise for provisioning even when credentials exist"
+	default n
+	depends on SECURE_IOT_EDGE_BLE_PROVISION
+
+config SECURE_IOT_EDGE_BLE_PROVISION_STOP_ON_NETWORK
+	bool "Stop BLE advertising when IPv4/DHCP is ready"
+	default y
+	depends on SECURE_IOT_EDGE_BLE_PROVISION
+
 config SECURE_IOT_EDGE_WIFI
 	bool "Enable Wi-Fi station manager"
 	default y
@@ -26,6 +43,16 @@ config SECURE_IOT_EDGE_WIFI_SSID
 config SECURE_IOT_EDGE_WIFI_PSK
 	string "Lab Wi-Fi PSK (optional)"
 	default ""
+	depends on SECURE_IOT_EDGE_WIFI
+
+config SECURE_IOT_EDGE_WIFI_RECONNECT_MIN_SEC
+	int "Minimum Wi-Fi reconnect backoff (seconds)"
+	default 3
+	depends on SECURE_IOT_EDGE_WIFI
+
+config SECURE_IOT_EDGE_WIFI_RECONNECT_MAX_SEC
+	int "Maximum Wi-Fi reconnect backoff (seconds)"
+	default 120
 	depends on SECURE_IOT_EDGE_WIFI
 
 config SECURE_IOT_EDGE_MQTT

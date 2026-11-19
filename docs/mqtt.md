@@ -47,7 +47,8 @@ Publish JSON to the command topic:
 | `publish_now` | Immediate telemetry publish |
 | `reboot` | Cold reset |
 | `fota_confirm` | `boot_write_img_confirmed()` |
-| `factory_reset` | Erase Wi-Fi credentials in NVS |
+| `factory_reset` | Erase Wi-Fi credentials in NVS; reopen BLE window |
+| `provision` | Reopen BLE provisioning window (no credential erase) |
 
 Examples with Mosquitto:
 

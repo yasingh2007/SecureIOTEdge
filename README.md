@@ -154,8 +154,8 @@ sequenceDiagram
 | Area | Implementation |
 |------|----------------|
 | RTOS | Zephyr threads, work queues, `k_timer` |
-| BLE | Peripheral GAP/GATT for Wi-Fi credential delivery (see `src/ble/`) |
-| Wi-Fi | Station mode, reconnect policy (`src/wifi/`) |
+| BLE | Timed provision window + GATT Wi-Fi setup (`docs/ble-provisioning.md`) |
+| Wi-Fi | Reconnect thread, exponential backoff (`src/wifi/`) |
 | MQTT | DNS broker resolve, TLS CA credentials, JSON command handler (`docs/mqtt.md`) |
 | Secure boot | MCUboot in secondary slot layout (`bootloader/` + `sysbuild.conf`) |
 | FOTA | MCUboot image confirm after MQTT check-in (`src/fota/`) |
