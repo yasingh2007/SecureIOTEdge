@@ -158,7 +158,7 @@ sequenceDiagram
 | Wi-Fi | Reconnect thread, exponential backoff (`src/wifi/`) |
 | MQTT | DNS broker resolve, TLS CA credentials, JSON command handler (`docs/mqtt.md`) |
 | Secure boot | MCUboot in secondary slot layout (`bootloader/` + `sysbuild.conf`) |
-| FOTA | MCUboot image confirm after MQTT check-in (`src/fota/`) |
+| FOTA | MCUmgr BLE upload + self-test before MCUboot confirm (`docs/fota-mcumgr-ble.md`) |
 | Sensors | BME680 via devicetree or synthetic JSON fallback (`src/sensors/`) |
 | Power | Idle backoff when cloud disconnected (`src/power/`) |
 | Diagnostics | Heartbeat logging + optional shell (`src/diag/`) |

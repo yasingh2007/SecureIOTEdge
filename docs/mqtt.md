@@ -45,6 +45,7 @@ Publish JSON to the command topic:
 | `cmd` | Action |
 |-------|--------|
 | `publish_now` | Immediate telemetry publish |
+| `self_test` | Run FOTA self-test checks (logs only) |
 | `reboot` | Cold reset |
 | `fota_confirm` | `boot_write_img_confirmed()` |
 | `factory_reset` | Erase Wi-Fi credentials in NVS; reopen BLE window |

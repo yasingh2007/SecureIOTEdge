@@ -2,12 +2,23 @@
 
 This project targets **MCUboot** dual-slot updates on Zephyr using **sysbuild** (`sysbuild.conf`).
 
+Primary OTA transport: **MCUmgr SMP over BLE** — see [fota-mcumgr-ble.md](fota-mcumgr-ble.md).
+
 ## Boot flow
 
 1. ROM loads **MCUboot** (bootloader child image).
 2. MCUboot verifies the signature on the candidate slot (RSA/EC256 depending on Kconfig).
-3. Application runs from primary slot; downloads land in secondary slot.
+3. Application runs from primary slot; uploads land in secondary slot via SMP image management.
 4. MCUboot swaps or overwrites on next reboot after `img_mgmt` marks the image pending.
+
+## Confirm-after-boot (self-test)
+
+`src/fota/fota_manager.c` + `src/fota/fota_self_test.c`:
+
+1. Detect unconfirmed image with `boot_is_img_confirmed()`.
+2. Run Wi-Fi / MQTT / telemetry self-tests (configurable).
+3. On success, `boot_write_img_confirmed()` — image becomes permanent.
+4. On failure, leave unconfirmed so MCUboot can roll back per swap policy.
 
 ## Signing (development)
 
@@ -26,20 +37,10 @@ Sign a production image:
 west sign -t imgtool -- --key keys/root-ec-p256.pem
 ```
 
-## Transport options (portfolio extensions)
+## Other transports (reference)
 
-| Transport | Zephyr pieces | Demo value |
-|-----------|---------------|------------|
-| BLE SMP | `CONFIG_MCUMGR`, `CONFIG_BT` | Phone / laptop updates without Wi-Fi |
-| HTTP(S) | `CONFIG_MCUMGR_GRP_IMG`, download client | Cloud-triggered updates |
-| MQTT command | Custom topic → trigger SMP | Shows end-to-end IoT control plane |
-
-## Confirm-after-boot
-
-`src/fota/fota_manager.c` checks `boot_is_img_confirmed()`. Production pattern:
-
-1. Run connectivity + sensor self-test.
-2. Call `boot_write_img_confirmed()`.
-3. If tests fail, revert via MCUboot or refuse confirm (image reverts on next boot depending on swap strategy).
-
-Document your rollback story in interviews — reviewers care about **bricked-device avoidance** more than raw download speed.
+| Transport | Zephyr pieces | Notes |
+|-----------|---------------|--------|
+| BLE SMP | `CONFIG_MCUMGR_TRANSPORT_BT` | **Implemented** — Nordic-friendly |
+| HTTP(S) | MCUmgr / download client | Cloud backhaul extension |
+| MQTT command | Trigger factory flow | Complements SMP, not a transport |
