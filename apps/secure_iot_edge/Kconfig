@@ -118,6 +118,43 @@ config SECURE_IOT_EDGE_FOTA
 	default y
 	depends on IMG_MANAGER
 
+config SECURE_IOT_EDGE_FOTA_SELF_TEST
+	bool "Run self-tests before confirming an OTA image"
+	default y
+	depends on SECURE_IOT_EDGE_FOTA
+
+config SECURE_IOT_EDGE_FOTA_SELF_TEST_REQUIRE_WIFI
+	bool "Self-test requires Wi-Fi link"
+	default y
+	depends on SECURE_IOT_EDGE_FOTA_SELF_TEST
+
+config SECURE_IOT_EDGE_FOTA_SELF_TEST_REQUIRE_MQTT
+	bool "Self-test requires MQTT session"
+	default y
+	depends on SECURE_IOT_EDGE_FOTA_SELF_TEST
+
+config SECURE_IOT_EDGE_FOTA_SELF_TEST_REQUIRE_SENSOR
+	bool "Self-test requires telemetry JSON"
+	default y
+	depends on SECURE_IOT_EDGE_FOTA_SELF_TEST
+
+config SECURE_IOT_EDGE_FOTA_SELF_TEST_MIN_UPTIME_MS
+	int "Minimum uptime before self-test (ms)"
+	default 15000
+	depends on SECURE_IOT_EDGE_FOTA_SELF_TEST
+
+config SECURE_IOT_EDGE_FOTA_CONFIRM_BYPASS
+	bool "Allow MQTT fota_confirm without passing self-test"
+	default n
+	depends on SECURE_IOT_EDGE_FOTA
+
+config SECURE_IOT_EDGE_MCUMGR_BLE_OTA
+	bool "Project helpers for MCUmgr SMP over BLE"
+	default y
+	depends on SECURE_IOT_EDGE_FOTA && BT && MCUMGR_TRANSPORT_BT
+	help
+	  Enable prj.conf MCUMGR_TRANSPORT_BT and fota_smp_bt advertising hooks.
+
 config SECURE_IOT_EDGE_SENSORS
 	bool "Enable sensor hub"
 	default y

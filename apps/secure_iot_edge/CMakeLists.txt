@@ -26,6 +26,8 @@ target_sources(app PRIVATE
   src/mqtt/mqtt_command.c
   src/mqtt/mqtt_client_app.c
   src/fota/fota_manager.c
+  src/fota/fota_self_test.c
+  src/fota/fota_smp_bt.c
   src/sensors/sensor_hub.c
   src/power/power_manager.c
   src/diag/diagnostics.c

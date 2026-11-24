@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(ble_provision, CONFIG_LOG_DEFAULT_LEVEL);
 #include <zephyr/sys/util.h>
 
 #include "secure_iot_edge/ble_provision.h"
+#include "secure_iot_edge/fota_smp_bt.h"
 #include "secure_iot_edge/wifi_credentials.h"
 #include "secure_iot_edge/wifi_manager.h"
 
@@ -72,6 +73,8 @@ static int start_advertising(void)
 		return 0;
 	}
 
+	fota_smp_bt_pause_connectable();
+
 	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err != 0) {
 		LOG_ERR("Advertising failed %d", err);
@@ -97,6 +100,8 @@ void ble_provision_stop(void)
 		advertising = false;
 		LOG_INF("BLE provisioning stopped");
 	}
+
+	(void)fota_smp_bt_resume_connectable();
 }
 
 bool ble_provision_window_active(void)
@@ -253,6 +258,8 @@ int ble_provision_start(void)
 		return err;
 	}
 
+	fota_smp_bt_init();
+
 	k_work_init_delayable(&window_timeout_work, window_timeout_handler);
 	advertising = false;
 	window_open = false;
@@ -261,6 +268,7 @@ int ble_provision_start(void)
 
 	if (!should_open_window_at_boot()) {
 		LOG_INF("Stored Wi-Fi credentials — BLE provision window skipped");
+		(void)fota_smp_bt_resume_connectable();
 		return 0;
 	}
 

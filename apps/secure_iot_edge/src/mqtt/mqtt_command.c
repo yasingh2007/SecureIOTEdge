@@ -13,6 +13,7 @@
 #include "app_context.h"
 #include "secure_iot_edge/ble_provision.h"
 #include "secure_iot_edge/fota_manager.h"
+#include "secure_iot_edge/fota_self_test.h"
 #include "secure_iot_edge/mqtt_client_app.h"
 #include "secure_iot_edge/mqtt_command.h"
 #include "secure_iot_edge/wifi_credentials.h"
@@ -43,6 +44,14 @@ static void handle_cmd(struct app_context *ctx, const char *cmd)
 	if (strcmp(cmd, "publish_now") == 0) {
 		LOG_INF("Command: publish_now");
 		mqtt_client_publish_now();
+		return;
+	}
+
+	if (strcmp(cmd, "self_test") == 0) {
+		LOG_INF("Command: run FOTA self-test");
+		if (fota_self_test_run(ctx) != 0) {
+			fota_self_test_log_summary();
+		}
 		return;
 	}
 
